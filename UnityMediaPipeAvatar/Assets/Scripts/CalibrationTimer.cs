@@ -5,7 +5,8 @@ using UnityEngine;
 
 public class CalibrationTimer : MonoBehaviour
 {
-    public PipeServer server;
+    public WebSocketManager wbt;
+    //public PipeServer server;
     public int timer = 5;
     public KeyCode calibrationKey = KeyCode.C;
     public TextMeshProUGUI text;
@@ -30,7 +31,7 @@ public class CalibrationTimer : MonoBehaviour
         gameObject.SetActive(shouldEnable);
         if (!shouldEnable)
         {
-            server.SetVisible(false);
+            wbt.SetVisible(false);
         }
     }
 
@@ -67,7 +68,7 @@ public class CalibrationTimer : MonoBehaviour
         if (a.Length>0)
         {
             text.text = "Calibration Completed";
-            server.SetVisible(false);
+            wbt.SetVisible(false);
         }
         else
         {

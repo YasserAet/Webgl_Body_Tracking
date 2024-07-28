@@ -42,7 +42,7 @@ GameObject:
   - component: {fileID: 1055126577752158229}
   - component: {fileID: 1055126577752158228}
   m_Layer: 0
-  m_Name: PipeServer
+  m_Name: WebsocketManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

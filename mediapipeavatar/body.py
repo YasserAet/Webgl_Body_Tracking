@@ -104,15 +104,15 @@ class BodyThread(threading.Thread):
                 i = 0
                 if results.pose_world_landmarks:
                     hand_world_landmarks = results.pose_world_landmarks
-                    for i in range(0,33):
+                    for i in range(0,23):
                         landmarks = {
-                            'i': i,
+                            'index': i,
                             'x': hand_world_landmarks.landmark[i].x,
                             'y': hand_world_landmarks.landmark[i].y,
                             'z': hand_world_landmarks.landmark[i].z,
                             }
                         
-                        # i want to contatinate the larndmarks {} and send it as a single string
+                        #contatinating the larndmarks {} and sending them as a single string
                         if (i == 32):
                             self.data += json.dumps(landmarks)
                         else:
@@ -184,13 +184,13 @@ class BodyThread(threading.Thread):
         ws.close()
         pass
 
-    def setup_comms(self):
-        if not global_vars.USE_LEGACY_PIPES:
-            self.client = ClientUDP(global_vars.HOST,global_vars.PORT)
-            self.client.start()
-        else:
-            print("Using Pipes for interprocess communication (not supported on OSX or Linux).")
-        pass      
+    # def setup_comms(self):
+    #     if not global_vars.USE_LEGACY_PIPES:
+    #         self.client = ClientUDP(global_vars.HOST,global_vars.PORT)
+    #         self.client.start()
+    #     else:
+    #         print("Using Pipes for interprocess communication (not supported on OSX or Linux).")
+    #     pass      
 
     # def send_data(self,message):
     #     if not global_vars.USE_LEGACY_PIPES:
