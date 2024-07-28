@@ -5,8 +5,7 @@ using UnityEngine;
 
 public class CalibrationTimer : MonoBehaviour
 {
-    public WebSocketManager wbt;
-    //public PipeServer server;
+    public PipeServer server;
     public int timer = 5;
     public KeyCode calibrationKey = KeyCode.C;
     public TextMeshProUGUI text;
@@ -31,7 +30,7 @@ public class CalibrationTimer : MonoBehaviour
         gameObject.SetActive(shouldEnable);
         if (!shouldEnable)
         {
-            wbt.SetVisible(false);
+            server.SetVisible(false);
         }
     }
 
@@ -39,7 +38,7 @@ public class CalibrationTimer : MonoBehaviour
     {
         if (Input.GetKeyDown(calibrationKey))
         {
-            if(!calibrated)
+            if (!calibrated)
             {
                 calibrated = true;
                 StartCoroutine(Timer());
@@ -55,20 +54,20 @@ public class CalibrationTimer : MonoBehaviour
         int t = timer;
         while (t > 0)
         {
-            text.text = "Copy the avatars starting pose: "+t.ToString();
+            text.text = "Copy the avatars starting pose: " + t.ToString();
             yield return new WaitForSeconds(1f);
             --t;
         }
         Avatar[] a = FindObjectsByType<Avatar>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-        foreach(Avatar aa in a)
+        foreach (Avatar aa in a)
         {
             if (!aa.isActiveAndEnabled) continue;
             aa.Calibrate();
         }
-        if (a.Length>0)
+        if (a.Length > 0)
         {
             text.text = "Calibration Completed";
-            wbt.SetVisible(false);
+            server.SetVisible(false);
         }
         else
         {

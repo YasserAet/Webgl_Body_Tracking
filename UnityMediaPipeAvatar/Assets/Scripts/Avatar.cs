@@ -16,8 +16,8 @@ public class Avatar : MonoBehaviour
 
     public bool Calibrated { get; private set; }
 
-    //private PipeServer server;
-    private WebSocketManager websocket;
+    private PipeServer server;
+    //private WebSocketManager websocket;
 
     private Quaternion initialRotation;
     private Vector3 initialPosition;
@@ -36,11 +36,11 @@ public class Avatar : MonoBehaviour
             CalibrateFromPersistent();
         }
 
-        /*server = FindObjectOfType<PipeServer>();
+        server = FindObjectOfType<PipeServer>();
         if (server == null)
         {
             Debug.LogError("You must have a PipeServer in the scene!");
-        }*/
+        }
     }
 
     public void CalibrateFromPersistent()
@@ -71,41 +71,41 @@ public class Avatar : MonoBehaviour
 
         // Manually setting calibration data for the spine chain as we want really specific control over that.
         spineUpDown = new CalibrationData(animator.transform, animator.GetBoneTransform(HumanBodyBones.Spine), animator.GetBoneTransform(HumanBodyBones.Neck),
-            websocket.GetVirtualHip(), websocket.GetVirtualNeck());
+            server.GetVirtualHip(), server.GetVirtualNeck());
         hipsTwist = new CalibrationData(animator.transform, animator.GetBoneTransform(HumanBodyBones.Hips), animator.GetBoneTransform(HumanBodyBones.Hips),
-            websocket.GetLandmark((int)Landmark.RIGHT_HIP), websocket.GetLandmark((int)Landmark.LEFT_HIP));
+            server.GetLandmark((int)Landmark.RIGHT_HIP), server.GetLandmark((int)Landmark.LEFT_HIP));
         chest = new CalibrationData(animator.transform, animator.GetBoneTransform(HumanBodyBones.Chest), animator.GetBoneTransform(HumanBodyBones.Chest),
-            websocket.GetLandmark((int)Landmark.RIGHT_HIP), websocket.GetLandmark((int)Landmark.LEFT_HIP));
+            server.GetLandmark((int)Landmark.RIGHT_HIP), server.GetLandmark((int)Landmark.LEFT_HIP));
         head = new CalibrationData(animator.transform, animator.GetBoneTransform(HumanBodyBones.Neck), animator.GetBoneTransform(HumanBodyBones.Head),
-            websocket.GetVirtualNeck(), websocket.GetLandmark((int)Landmark.NOSE));
+            server.GetVirtualNeck(), server.GetLandmark((int)Landmark.NOSE));
 
         // Adding calibration data automatically for the rest of the bones.
         AddCalibration(HumanBodyBones.RightUpperArm, HumanBodyBones.RightLowerArm,
-            websocket.GetLandmark((int)Landmark.RIGHT_SHOULDER), websocket.GetLandmark((int)Landmark.RIGHT_ELBOW));
+            server.GetLandmark((int)Landmark.RIGHT_SHOULDER), server.GetLandmark((int)Landmark.RIGHT_ELBOW));
         AddCalibration(HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand,
-            websocket.GetLandmark((int)Landmark.RIGHT_ELBOW), websocket.GetLandmark((int)Landmark.RIGHT_WRIST));
+            server.GetLandmark((int)Landmark.RIGHT_ELBOW), server.GetLandmark((int)Landmark.RIGHT_WRIST));
 
         AddCalibration(HumanBodyBones.RightUpperLeg, HumanBodyBones.RightLowerLeg,
-            websocket.GetLandmark((int)Landmark.RIGHT_HIP), websocket.GetLandmark((int)Landmark.RIGHT_KNEE));
+            server.GetLandmark((int)Landmark.RIGHT_HIP), server.GetLandmark((int)Landmark.RIGHT_KNEE));
         AddCalibration(HumanBodyBones.RightLowerLeg, HumanBodyBones.RightFoot,
-            websocket.GetLandmark((int)Landmark.RIGHT_KNEE), websocket.GetLandmark((int)Landmark.RIGHT_ANKLE));
+            server.GetLandmark((int)Landmark.RIGHT_KNEE), server.GetLandmark((int)Landmark.RIGHT_ANKLE));
 
         AddCalibration(HumanBodyBones.LeftUpperArm, HumanBodyBones.LeftLowerArm,
-            websocket.GetLandmark((int)Landmark.LEFT_SHOULDER), websocket.GetLandmark((int)Landmark.LEFT_ELBOW));
+            server.GetLandmark((int)Landmark.LEFT_SHOULDER), server.GetLandmark((int)Landmark.LEFT_ELBOW));
         AddCalibration(HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand,
-            websocket.GetLandmark((int)Landmark.LEFT_ELBOW), websocket.GetLandmark((int)Landmark.LEFT_WRIST));
+            server.GetLandmark((int)Landmark.LEFT_ELBOW), server.GetLandmark((int)Landmark.LEFT_WRIST));
 
         AddCalibration(HumanBodyBones.LeftUpperLeg, HumanBodyBones.LeftLowerLeg,
-            websocket.GetLandmark((int)Landmark.LEFT_HIP), websocket.GetLandmark((int)Landmark.LEFT_KNEE));
+            server.GetLandmark((int)Landmark.LEFT_HIP), server.GetLandmark((int)Landmark.LEFT_KNEE));
         AddCalibration(HumanBodyBones.LeftLowerLeg, HumanBodyBones.LeftFoot,
-            websocket.GetLandmark((int)Landmark.LEFT_KNEE), websocket.GetLandmark((int)Landmark.LEFT_ANKLE));
+            server.GetLandmark((int)Landmark.LEFT_KNEE), server.GetLandmark((int)Landmark.LEFT_ANKLE));
 
         if (footTracking)
         {
             AddCalibration(HumanBodyBones.LeftFoot, HumanBodyBones.LeftToes,
-                websocket.GetLandmark((int)Landmark.LEFT_ANKLE), websocket.GetLandmark((int)Landmark.LEFT_FOOT_INDEX));
+                server.GetLandmark((int)Landmark.LEFT_ANKLE), server.GetLandmark((int)Landmark.LEFT_FOOT_INDEX));
             AddCalibration(HumanBodyBones.RightFoot, HumanBodyBones.RightToes,
-                websocket.GetLandmark((int)Landmark.RIGHT_ANKLE), websocket.GetLandmark((int)Landmark.RIGHT_FOOT_INDEX));
+                server.GetLandmark((int)Landmark.RIGHT_ANKLE), server.GetLandmark((int)Landmark.RIGHT_FOOT_INDEX));
         }
 
         animator.enabled = false; // disable animator to stop interference.

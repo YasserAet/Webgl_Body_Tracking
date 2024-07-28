@@ -1465,7 +1465,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 381108381}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b3ff401039027f74a8d2dfcb430ce0aa, type: 3}
+  m_Script: {fileID: 11500000, guid: a8cec1fae34c9484789bd4526609dffe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   host: 127.0.0.1
@@ -3693,9 +3693,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 963194225}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 54415757aaddf4b8a9cd7122fd120cc6, type: 3}
+  m_Script: {fileID: 11500000, guid: a8cec1fae34c9484789bd4526609dffe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  host: 127.0.0.1
+  port: 5050
+  bodyParent: {fileID: 0}
+  landmarkPrefab: {fileID: 0}
+  linePrefab: {fileID: 0}
+  headPrefab: {fileID: 0}
+  enableHead: 0
+  multiplier: 10
+  landmarkScale: 1
+  maxSpeed: 50
+  debug_samplespersecond: 0
+  samplesForPose: 1
+  active: 0
 --- !u!1 &982359017
 GameObject:
   m_ObjectHideFlags: 0
@@ -4877,7 +4890,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 541d0a3d756f8654f951583f8f0c1b3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  wbt: {fileID: 2078019262}
+  server: {fileID: 2078019262}
   timer: 10
   calibrationKey: 99
   text: {fileID: 664772508}
@@ -6698,7 +6711,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 2078019260}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b3ff401039027f74a8d2dfcb430ce0aa, type: 3}
+  m_Script: {fileID: 11500000, guid: a8cec1fae34c9484789bd4526609dffe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   host: 127.0.0.1
@@ -6809,7 +6822,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1055126577752158231, guid: 1eb6969b7ef8ed44a9a446e718710222, type: 3}
       propertyPath: m_Name
-      value: WebsocketManager
+      value: PipeServer
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 1055126577752158228, guid: 1eb6969b7ef8ed44a9a446e718710222, type: 3}
