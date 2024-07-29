@@ -69,7 +69,7 @@ public class PipeServer : MonoBehaviour
         {
             var message = System.Text.Encoding.UTF8.GetString(bytes);
             HandleMessage(message);
-            Debug.Log(message);
+            // Debug.Log(message);
         };
 
         await webSocket.Connect();
@@ -108,6 +108,31 @@ public class PipeServer : MonoBehaviour
         b.UpdateLines();
     }
 
+    // void ProcessBodyTrackingData(BodyTrackingData bodyData)
+    // {
+    //     // Ensure there are enough instantiated landmarks
+    //     while (instantiatedLandmarks.Count < bodyData.landmarks.Count)
+    //     {
+    //         GameObject newLandmark = Instantiate(landmarkPrefab, Vector3.zero, Quaternion.identity);
+    //         newLandmark.transform.localScale = landmarkScale;
+    //         instantiatedLandmarks.Add(newLandmark);
+    //     }
+
+    //     // Update positions of landmarks
+    //     for (int i = 0; i < bodyData.landmarks.Count; i++)
+    //     {
+    //         BodyLandmark landmark = bodyData.landmarks[i];
+    //         Vector3 position = new Vector3(landmark.x, -landmark.y, landmark.z);
+    //         instantiatedLandmarks[i].transform.position = position;
+    //     }
+
+    //     // Deactivate unused landmarks
+    //     for (int i = bodyData.landmarks.Count; i < instantiatedLandmarks.Count; i++)
+    //     {
+    //         instantiatedLandmarks[i].SetActive(false);
+    //     }
+    // }
+
     public void SetVisible(bool visible)
     {
         bodyParent.gameObject.SetActive(visible);
@@ -115,18 +140,28 @@ public class PipeServer : MonoBehaviour
 
     private void HandleMessage(string message)
     {
-        string[] lines = message.Split(',');
+        string[] lines = message.Split('|');
         foreach (string l in lines)
         {
             if (string.IsNullOrWhiteSpace(l))
                 continue;
-            string[] s = l.Split('|');
+            string[] s = l.Split(',');
             if (s.Length < 4) continue;
             int i;
             if (!int.TryParse(s[0], out i)) continue;
             body.positionsBuffer[i].value += new Vector3(float.Parse(s[1]), float.Parse(s[2]), float.Parse(s[3]));
             body.positionsBuffer[i].accumulatedValuesCount += 1;
             body.active = true;
+
+            
+
+                // Debug log each value
+                Debug.Log($"Index: {float.Parse(s[1])}, X: {float.Parse(s[1])}, Y: {float.Parse(s[2])}, Z: {float.Parse(s[3])}");
+
+                /*body.positionsBuffer[index].value += new Vector3(x, y, z) * multiplier;
+                body.positionsBuffer[index].accumulatedValuesCount += 1;
+                body.active = true;*/
+            
         }
     }
 

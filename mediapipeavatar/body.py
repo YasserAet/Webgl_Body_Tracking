@@ -126,11 +126,11 @@ class BodyThread(threading.Thread):
                 if results.pose_world_landmarks:
                    pose_landmarks = results.pose_world_landmarks
                    landmarks_list = []
-                   for i in range(33):
+                   for i in range(23):
                        landmarks = f"{i},{pose_landmarks.landmark[i].x},{pose_landmarks.landmark[i].y},{pose_landmarks.landmark[i].z}"
                        landmarks_list.append(landmarks)
                    
-                   self.data += ",".join(landmarks_list)
+                   self.data += "|".join(landmarks_list)
                    
                    ws.send(self.data)
                    self.send_data(self.data)
