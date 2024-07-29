@@ -100,28 +100,41 @@ class BodyThread(threading.Thread):
                     cv2.waitKey(100)
 
                 # Set up data for relay
-                self.data = "{\"frame\" : ["
-                i = 0
-                if results.pose_world_landmarks:
-                    hand_world_landmarks = results.pose_world_landmarks
-                    for i in range(0,23):
-                        landmarks = {
-                            'index': i,
-                            'x': hand_world_landmarks.landmark[i].x,
-                            'y': hand_world_landmarks.landmark[i].y,
-                            'z': hand_world_landmarks.landmark[i].z,
-                            }
+                # self.data = "{\"frame\" : ["
+                # i = 0
+                # if results.pose_world_landmarks:
+                #     pose_landmarks = results.pose_world_landmarks
+                #     for i in range(0,23):
+                #         landmarks = {
+                #             'index': i,
+                #             'x': pose_landmarks.landmark[i].x,
+                #             'y': pose_landmarks.landmark[i].y,
+                #             'z': pose_landmarks.landmark[i].z,
+                #             }
                         
-                        #contatinating the larndmarks {} and sending them as a single string
-                        if (i == 32):
-                            self.data += json.dumps(landmarks)
-                        else:
-                            self.data += json.dumps(landmarks) + ","
+                #         #contatinating the larndmarks {} and sending them as a single string
+                #         if (i == 32):
+                #             self.data += json.dumps(landmarks)
+                #         else:
+                #             self.data += json.dumps(landmarks) + ","
 
                     
-                    self.data += "]}"
-                ws.send(self.data)
-                self.send_data(self.data)
+                #     self.data += "]}"
+                # ws.send(self.data)
+                # self.send_data(self.data)
+
+                if results.pose_world_landmarks:
+                   pose_landmarks = results.pose_world_landmarks
+                   landmarks_list = []
+                   for i in range(33):
+                       landmarks = f"{i},{pose_landmarks.landmark[i].x},{pose_landmarks.landmark[i].y},{pose_landmarks.landmark[i].z}"
+                       landmarks_list.append(landmarks)
+                   
+                   self.data += ",".join(landmarks_list)
+                   
+                   ws.send(self.data)
+                   self.send_data(self.data)
+
 
                 # if results.pose_landmarks:
                 #     # Convert landmarks to JSON

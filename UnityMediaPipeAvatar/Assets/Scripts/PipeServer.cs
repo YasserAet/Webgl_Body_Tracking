@@ -115,7 +115,7 @@ public class PipeServer : MonoBehaviour
 
     private void HandleMessage(string message)
     {
-        string[] lines = message.Split('\n');
+        string[] lines = message.Split(',');
         foreach (string l in lines)
         {
             if (string.IsNullOrWhiteSpace(l))

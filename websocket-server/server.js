@@ -13,7 +13,7 @@ wss.on('connection', (ws) => {
             // console.log('y:', data.y);
             // console.log('z:', data.z);
             
-            const response = JSON.stringify({ message: 'Data received', status: 'success' });
+            // const response = JSON.stringify({ message: 'Data received', status: 'success' });
             ws.send(message);
         // Broadcast the message to all clients
         wss.clients.forEach((client) => {
