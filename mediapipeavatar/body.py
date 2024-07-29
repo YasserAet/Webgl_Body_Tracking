@@ -58,7 +58,7 @@ class BodyThread(threading.Thread):
         mp_drawing = mp.solutions.drawing_utils
         mp_pose = mp.solutions.pose
 
-        # self.setup_comms()
+        self.setup_comms()
         
         capture = CaptureThread()
         capture.start()
@@ -121,7 +121,7 @@ class BodyThread(threading.Thread):
                     
                     self.data += "]}"
                 ws.send(self.data)
-                # self.send_data(self.data)
+                self.send_data(self.data)
 
                 # if results.pose_landmarks:
                 #     # Convert landmarks to JSON
@@ -178,41 +178,41 @@ class BodyThread(threading.Thread):
 
 
                     
-        # self.pipe.close()
+        self.pipe.close()
         capture.cap.release()
         cv2.destroyAllWindows()
         ws.close()
         pass
 
-    # def setup_comms(self):
-    #     if not global_vars.USE_LEGACY_PIPES:
-    #         self.client = ClientUDP(global_vars.HOST,global_vars.PORT)
-    #         self.client.start()
-    #     else:
-    #         print("Using Pipes for interprocess communication (not supported on OSX or Linux).")
-    #     pass      
+    def setup_comms(self):
+        if not global_vars.USE_LEGACY_PIPES:
+            self.client = ClientUDP(global_vars.HOST,global_vars.PORT)
+            self.client.start()
+        else:
+            print("Using Pipes for interprocess communication (not supported on OSX or Linux).")
+        pass      
 
-    # def send_data(self,message):
-    #     if not global_vars.USE_LEGACY_PIPES:
-    #         self.client.sendMessage(message)
-    #         pass
-    #     else:
-    #         # Maintain pipe connection.
-    #         if self.pipe==None and time.time()-self.timeSinceCheckedConnection>=1:
-    #             try:
-    #                 self.pipe = open(r'\\.\pipe\UnityMediaPipeBody1', 'r+b', 0)
-    #             except FileNotFoundError:
-    #                 print("Waiting for Unity project to run...")
-    #                 self.pipe = None
-    #             self.timeSinceCheckedConnection = time.time()
+    def send_data(self,message):
+        if not global_vars.USE_LEGACY_PIPES:
+            self.client.sendMessage(message)
+            pass
+        else:
+            # Maintain pipe connection.
+            if self.pipe==None and time.time()-self.timeSinceCheckedConnection>=1:
+                try:
+                    self.pipe = open(r'\\.\pipe\UnityMediaPipeBody1', 'r+b', 0)
+                except FileNotFoundError:
+                    print("Waiting for Unity project to run...")
+                    self.pipe = None
+                self.timeSinceCheckedConnection = time.time()
 
-    #         if self.pipe != None:
-    #             try:     
-    #                 s = self.data.encode('utf-8') 
-    #                 self.pipe.write(struct.pack('I', len(s)) + s)   
-    #                 self.pipe.seek(0)    
-    #             except Exception as ex:  
-    #                 print("Failed to write to pipe. Is the unity project open?")
-    #                 self.pipe= None
-    #     pass
+            if self.pipe != None:
+                try:     
+                    s = self.data.encode('utf-8') 
+                    self.pipe.write(struct.pack('I', len(s)) + s)   
+                    self.pipe.seek(0)    
+                except Exception as ex:  
+                    print("Failed to write to pipe. Is the unity project open?")
+                    self.pipe= None
+        pass
                         
