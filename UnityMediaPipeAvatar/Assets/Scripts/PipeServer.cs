@@ -18,6 +18,7 @@ public class PipeServer : MonoBehaviour
     public float debug_samplespersecond;
     public int samplesForPose = 1;
     public bool active;
+    
 
     private WebSocket webSocket;
     private Body body;
@@ -152,11 +153,9 @@ public class PipeServer : MonoBehaviour
             body.positionsBuffer[i].value += new Vector3(float.Parse(s[1]), float.Parse(s[2]), float.Parse(s[3]));
             body.positionsBuffer[i].accumulatedValuesCount += 1;
             body.active = true;
-
             
-
-                // Debug log each value
-                Debug.Log($"Index: {float.Parse(s[1])}, X: {float.Parse(s[1])}, Y: {float.Parse(s[2])}, Z: {float.Parse(s[3])}");
+            // Debug log each value
+                Debug.Log($"X: {float.Parse(s[1])}, Y: {float.Parse(s[2])}, Z: {float.Parse(s[3])}");
 
                 /*body.positionsBuffer[index].value += new Vector3(x, y, z) * multiplier;
                 body.positionsBuffer[index].accumulatedValuesCount += 1;

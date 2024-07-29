@@ -14,6 +14,16 @@ import struct
 import json
 
 
+# def send_large_data(ws, data):
+#     max_chunk_size = 1024  # Adjust as necessary
+#     start = 0
+#     end = max_chunk_size
+#     data_length = len(data)
+#     while start < data_length:
+#         ws.send(data[start:end])
+#         start = end
+#         end += max_chunk_size
+
 ws = websocket.WebSocket()
 ws.connect("ws://localhost:5050")
 
@@ -133,9 +143,10 @@ class BodyThread(threading.Thread):
                    self.data += "|".join(landmarks_list)
                    
                    ws.send(self.data)
-                   self.send_data(self.data)
-
-
+                #    self.send_data(self.data)
+                   # Send data in chunks
+                # send_large_data(ws, self.data)
+                   
                 # if results.pose_landmarks:
                 #     # Convert landmarks to JSON
                 #     print('landmarks converted to JSON')
