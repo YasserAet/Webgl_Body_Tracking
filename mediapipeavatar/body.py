@@ -9,7 +9,7 @@ import websocket
 import cv2
 import threading
 import time
-import global_vars 
+import global_vars
 import struct
 import json
 

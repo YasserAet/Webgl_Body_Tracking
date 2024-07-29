@@ -1,25 +1,12 @@
-using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Text;
-using UnityEngine;
-using System.Linq;
-using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using NativeWebSocket;
-using System.Runtime.Serialization;
-using System.IO;
-using System.Runtime.Serialization.Json;
-using System.IO.Pipes;
+using UnityEngine;
 
-
-
-[DefaultExecutionOrder(-1)]
 public class PipeServer : MonoBehaviour
 {
-    public bool useLegacyPipes = false; // True to use NamedPipes for interprocess communication (not supported on Linux)
-    public string host = "127.0.0.1"; // This machines host.
-    public int port = 5050; // Must match the Python side.
+    public string websocketUrl = "ws://localhost:5050"; // WebSocket server URL
     public Transform bodyParent;
     public GameObject landmarkPrefab;
     public GameObject linePrefab;
@@ -32,99 +19,69 @@ public class PipeServer : MonoBehaviour
     public int samplesForPose = 1;
     public bool active;
 
+    private WebSocket webSocket;
     private Body body;
-    //WebSocket websocket;
-    private NamedPipeServerStream serverNP;
-    private BinaryReader reader;
-    private ServerUDP server;
 
-   void Start()
+    // These virtual transforms are not actually provided by mediapipe pose, but are required for avatars.
+    // So I just manually compute them
+    private Transform virtualNeck;
+    private Transform virtualHip;
+
+    public Transform GetLandmark(Landmark mark)
     {
+        return body.instances[(int)mark].transform;
+    }
+    public Transform GetVirtualNeck()
+    {
+        return virtualNeck;
+    }
+    public Transform GetVirtualHip()
+    {
+        return virtualHip;
+    }
 
+    private async void Start()
+    {
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
         body = new Body(bodyParent, landmarkPrefab, linePrefab, landmarkScale, enableHead ? headPrefab : null);
         virtualNeck = new GameObject("VirtualNeck").transform;
         virtualHip = new GameObject("VirtualHip").transform;
-        //listen to the websocket server
-        //await ConnectToWebSocketServer();
 
-        // websocket = new WebSocket("ws://localhost:5050");
-        // // Connect to the server
-        // await websocket.Connect();
-        // websocket.OnOpen += () =>
-        // {
-        //     Debug.Log("Connection open!");
-        // };
+        webSocket = new WebSocket(websocketUrl);
 
-        // websocket.OnError += (e) =>
-        // {
-        //     Debug.Log("Error! " + e);
-        // };
-
-        // websocket.OnClose += (e) =>
-        // {
-        //     Debug.Log("Connection closed!");
-        // };
-
-        // websocket.OnMessage += (bytes) =>
-        // {
-
-        //     Debug.Log("Message received");
-        //     var message = Encoding.UTF8.GetString(bytes);
-        //     Debug.Log("Received message: " + message);
-        //     // Process landmarks data here
-        //     ProcessLandmarksData(message);
-        // };
-        // await websocket.Connect();
-
-         Thread t = new Thread(new ThreadStart(Run));
-         t.Start();
-        
-    }
-
-    /*async void OnApplicationQuit()
-    {
-        await websocket.Close();
-    }*/
-
-    void Update()
-     {
-        if (body != null)
+        webSocket.OnOpen += () =>
         {
-            UpdateBody(body);
-        }
-        else
+            Debug.Log("Connection open!");
+        };
+
+        webSocket.OnError += (e) =>
         {
-            Debug.LogError("Body object is null in Update.");
-        }
-      //  UpdateBody(body);
-       // Ensure WebSocket is continuously processing
-        // if (websocket != null)
-        // {
-        //     websocket.DispatchMessageQueue();
-        // }
+            Debug.LogError("WebSocket Error: " + e);
+        };
+
+        webSocket.OnClose += (e) =>
+        {
+            Debug.Log("Connection closed!");
+        };
+
+        webSocket.OnMessage += (bytes) =>
+        {
+            var message = System.Text.Encoding.UTF8.GetString(bytes);
+            HandleMessage(message);
+            Debug.Log(message);
+        };
+
+        await webSocket.Connect();
     }
 
-    
-    //  these virtual transforms are not actually provided by mediapipe pose, but are required for avatars.
-    // so I just manually compute them
-    private Transform virtualNeck;
-    private Transform virtualHip;
+    private void Update()
+    {
+        #if !UNITY_WEBGL || UNITY_EDITOR
+        webSocket.DispatchMessageQueue();
+        #endif
 
-    public Transform GetLandmark(int mark)
-    {
-        return body.instances[mark].transform;
-    }
-    
-    public Transform GetVirtualNeck()
-    {
-        return virtualNeck;
-    }
-    
-    public Transform GetVirtualHip()
-    {
-        return virtualHip;
+        UpdateBody(body);
     }
 
     private void UpdateBody(Body b)
@@ -133,7 +90,7 @@ public class PipeServer : MonoBehaviour
         {
             if (b.positionsBuffer[i].accumulatedValuesCount < samplesForPose)
                 continue;
-
+            
             b.localPositionTargets[i] = b.positionsBuffer[i].value / (float)b.positionsBuffer[i].accumulatedValuesCount * multiplier;
             b.positionsBuffer[i] = new AccumulatedBuffer(Vector3.zero, 0);
         }
@@ -141,11 +98,6 @@ public class PipeServer : MonoBehaviour
         Vector3 offset = Vector3.zero;
         for (int i = 0; i < LANDMARK_COUNT; ++i)
         {
-            if (b.instances[i] == null)
-            {
-                Debug.LogError($"Instance at index {i} is null.");
-                continue;
-            }
             Vector3 p = b.localPositionTargets[i] - offset;
             b.instances[i].transform.localPosition = Vector3.MoveTowards(b.instances[i].transform.localPosition, p, Time.deltaTime * maxSpeed);
         }
@@ -161,187 +113,41 @@ public class PipeServer : MonoBehaviour
         bodyParent.gameObject.SetActive(visible);
     }
 
-
-private void Run()
+    private void HandleMessage(string message)
     {
-        System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-
-        if (useLegacyPipes)
+        string[] lines = message.Split('\n');
+        foreach (string l in lines)
         {
-            // Open the named pipe.
-            serverNP = new NamedPipeServerStream("UnityMediaPipeBody1", PipeDirection.InOut, 99, PipeTransmissionMode.Message);
-
-            print("Waiting for connection...");
-            serverNP.WaitForConnection();
-
-            print("Connected.");
-            reader = new BinaryReader(serverNP, Encoding.UTF8);
-        }
-        else
-        {
-            server = new ServerUDP(host, port);
-            server.Connect();
-            server.StartListeningAsync();
-            print("Listening @"+host+":"+port);
-        }
-
-        while (true)
-        {
-            try
-            {
-                Body h = body;
-                var len = 0;
-                var str = "";
-
-                if (useLegacyPipes)
-                {
-                    len = (int)reader.ReadUInt32();
-                    str = new string(reader.ReadChars(len));
-                }
-                else
-                {
-                    if(server.HasMessage())
-                        str = server.GetMessage();
-                    len = str.Length;
-                }
-
-                string[] lines = str.Split('\n');
-                foreach (string l in lines)
-                {
-                    if (string.IsNullOrWhiteSpace(l))
-                        continue;
-                    string[] s = l.Split('|');
-                    if (s.Length < 4) continue;
-                    int i;
-                    if (!int.TryParse(s[0], out i)) continue;
-                    h.positionsBuffer[i].value += new Vector3(float.Parse(s[1]), float.Parse(s[2]), float.Parse(s[3]));
-                    h.positionsBuffer[i].accumulatedValuesCount += 1;
-                    h.active = true;
-                }
-            }
-            catch (EndOfStreamException)
-            {
-                print("Client Disconnected");
-                break;
-            }
-        }
-
-    }
-
-
-    void ProcessLandmarksData(string message)
-    {
-        Debug.Log("Processing");
-        Debug.Log("Raw JSON: " + message);
-
-        // try
-        // {
-        //     var landmarksData = JsonUtility.FromJson<LandmarksData>(message);
-
-        //     if (landmarksData != null)
-        //     {
-        //         foreach (var landmark in landmarksData.frame)
-        //         {
-        //             Debug.Log($"Index: {landmark.index}, X: {landmark.x}, Y: {landmark.y}, Z: {landmark.z}");
-        //         }
-        //     }
-        //     else
-        //     {
-        //         Debug.LogError("Failed to parse JSON: Data is null");
-        //     }
-        // }
-        // catch (Exception e)
-        // {
-        //     Debug.LogError($"Error processing landmarks data: {e.Message}");
-        // }
-
-        Body h = body;
-        string jsonString = message;
-
-        var serializer = new DataContractJsonSerializer(typeof(Root));
-        using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonString)))
-        {
-            Root root = (Root)serializer.ReadObject(stream);
-
-            // Iterate through the frames and process their values
-            foreach (var frame in root.Frames)
-            {
-                Debug.Log($"index: {frame.Index}, x: {frame.X}, y: {frame.Y}, z: {frame.Z}");
-
-                int index = frame.Index;
-                if (index < 0 || index >= LANDMARK_COUNT)
-                {
-                    Debug.LogError($"Invalid index {index} in landmarks data.");
-                    continue;
-                }
-
-                Vector3 position = new Vector3(frame.X, frame.Y, frame.Z);
-                body.positionsBuffer[index] = new AccumulatedBuffer(position, body.positionsBuffer[index].accumulatedValuesCount + 1);
-            }
+            if (string.IsNullOrWhiteSpace(l))
+                continue;
+            string[] s = l.Split('|');
+            if (s.Length < 4) continue;
+            int i;
+            if (!int.TryParse(s[0], out i)) continue;
+            body.positionsBuffer[i].value += new Vector3(float.Parse(s[1]), float.Parse(s[2]), float.Parse(s[3]));
+            body.positionsBuffer[i].accumulatedValuesCount += 1;
+            body.active = true;
         }
     }
-    //    void ProcessLandmarksData(string message)
-    // {
-    //    // Debug.Log("Raw JSON: " + message);
 
-    //     try
-    //     {
-    //         // Parse JSON using JsonUtility
-    //         var frameData = JsonUtility.FromJson<FrameData>(message);
-
-    //         // Process the point data
-    //         foreach (var point in frameData.frame)
-    //         {
-    //             Debug.Log($"Index: {point.index}, X: {point.x}, Y: {point.y}, Z: {point.z}");
-    //         }
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Debug.LogError($"Error processing landmarks data: {ex.Message}");
-    //     }
-    // }
-    // }
-
-    // Wrapper class to match the JSON structure
-
-    [DataContract]
-    public class Frame
+    private async void OnApplicationQuit()
     {
-        [DataMember(Name = "index")]
-        public int Index { get; set; }
-
-        [DataMember(Name = "x")]
-        public float X { get; set; }
-
-        [DataMember(Name = "y")]
-        public float Y { get; set; }
-
-        [DataMember(Name = "z")]
-        public float Z { get; set; }
+        await webSocket.Close();
     }
-
-
-    [DataContract]
-    public class Root
-    {
-        [DataMember(Name = "frame")]
-        public List<Frame> Frames { get; set; }
-    }
-
 
     const int LANDMARK_COUNT = 33;
     const int LINES_COUNT = 11;
 
-         public struct AccumulatedBuffer
-         {
-            public Vector3 value;
-             public int accumulatedValuesCount;
-             public AccumulatedBuffer(Vector3 v, int ac)
-             {
-                 value = v;
-                 accumulatedValuesCount = ac;
-             }
-         }
+    public struct AccumulatedBuffer
+    {
+        public Vector3 value;
+        public int accumulatedValuesCount;
+        public AccumulatedBuffer(Vector3 v, int ac)
+        {
+            value = v;
+            accumulatedValuesCount = ac;
+        }
+    }
 
     public class Body
     {
@@ -358,29 +164,26 @@ private void Run()
             this.parent = parent;
             for (int i = 0; i < instances.Length; ++i)
             {
-                instances[i] = Instantiate(landmarkPrefab);
+                instances[i] = Object.Instantiate(landmarkPrefab);
                 instances[i].transform.localScale = Vector3.one * s;
                 instances[i].transform.parent = parent;
                 instances[i].name = ((Landmark)i).ToString();
-                Debug.Log($"Created instance for landmark {(Landmark)i}");
             }
             for (int i = 0; i < lines.Length; ++i)
             {
-                lines[i] = Instantiate(linePrefab).GetComponent<LineRenderer>();
+                lines[i] = Object.Instantiate(linePrefab).GetComponent<LineRenderer>();
                 lines[i].transform.parent = parent;
-                Debug.Log($"Created line renderer for line {i}");
             }
 
             if (headPrefab)
             {
-                GameObject head = Instantiate(headPrefab);
+                GameObject head = Object.Instantiate(headPrefab);
                 head.transform.parent = instances[(int)Landmark.NOSE].transform;
                 head.transform.localPosition = headPrefab.transform.position;
                 head.transform.localRotation = headPrefab.transform.localRotation;
                 head.transform.localScale = headPrefab.transform.localScale;
             }
         }
-
         public void UpdateLines()
         {
             lines[0].positionCount = 4;
@@ -394,96 +197,56 @@ private void Run()
             lines[1].SetPosition(2, Position((Landmark)27));
             lines[1].SetPosition(3, Position((Landmark)31));
 
-                    lines[2].positionCount = 3;
-                    lines[2].SetPosition(0, Position((Landmark)28));
-                    lines[2].SetPosition(1, Position((Landmark)26));
-                    lines[2].SetPosition(2, Position((Landmark)24));
-                    lines[3].positionCount = 3;
-                    lines[3].SetPosition(0, Position((Landmark)27));
-                    lines[3].SetPosition(1, Position((Landmark)25));
-                    lines[3].SetPosition(2, Position((Landmark)23));
+            lines[2].positionCount = 3;
+            lines[2].SetPosition(0, Position((Landmark)28));
+            lines[2].SetPosition(1, Position((Landmark)26));
+            lines[2].SetPosition(2, Position((Landmark)24));
+            lines[3].positionCount = 3;
+            lines[3].SetPosition(0, Position((Landmark)27));
+            lines[3].SetPosition(1, Position((Landmark)25));
+            lines[3].SetPosition(2, Position((Landmark)23));
 
-                    lines[4].positionCount = 5;
-                    lines[4].SetPosition(0, Position((Landmark)24));
-                    lines[4].SetPosition(1, Position((Landmark)23));
-                    lines[4].SetPosition(2, Position((Landmark)11));
-                    lines[4].SetPosition(3, Position((Landmark)12));
-                    lines[4].SetPosition(4, Position((Landmark)24));
+            lines[4].positionCount = 5;
+            lines[4].SetPosition(0, Position((Landmark)24));
+            lines[4].SetPosition(1, Position((Landmark)23));
+            lines[4].SetPosition(2, Position((Landmark)11));
+            lines[4].SetPosition(3, Position((Landmark)12));
+            lines[4].SetPosition(4, Position((Landmark)24));
 
-                    lines[5].positionCount = 4;
-                    lines[5].SetPosition(0, Position((Landmark)12));
-                    lines[5].SetPosition(1, Position((Landmark)14));
-                    lines[5].SetPosition(2, Position((Landmark)16));
-                    lines[5].SetPosition(3, Position((Landmark)22));
-                    lines[6].positionCount = 4;
-                    lines[6].SetPosition(0, Position((Landmark)11));
-                    lines[6].SetPosition(1, Position((Landmark)13));
-                    lines[6].SetPosition(2, Position((Landmark)15));
-                    lines[6].SetPosition(3, Position((Landmark)21));
+            lines[5].positionCount = 4;
+            lines[5].SetPosition(0, Position((Landmark)12));
+            lines[5].SetPosition(1, Position((Landmark)14));
+            lines[5].SetPosition(2, Position((Landmark)16));
+            lines[5].SetPosition(3, Position((Landmark)22));
+            lines[6].positionCount = 4;
+            lines[6].SetPosition(0, Position((Landmark)11));
+            lines[6].SetPosition(1, Position((Landmark)13));
+            lines[6].SetPosition(2, Position((Landmark)15));
+            lines[6].SetPosition(3, Position((Landmark)21));
 
-                    lines[7].positionCount = 4;
-                    lines[7].SetPosition(0, Position((Landmark)16));
-                    lines[7].SetPosition(1, Position((Landmark)18));
-                    lines[7].SetPosition(2, Position((Landmark)20));
-                    lines[7].SetPosition(3, Position((Landmark)16));
-                    lines[8].positionCount = 4;
-                    lines[8].SetPosition(0, Position((Landmark)15));
-                    lines[8].SetPosition(1, Position((Landmark)17));
-                    lines[8].SetPosition(2, Position((Landmark)19));
-                    lines[8].SetPosition(3, Position((Landmark)15));
+            lines[7].positionCount = 4;
+            lines[7].SetPosition(0, Position((Landmark)16));
+            lines[7].SetPosition(1, Position((Landmark)18));
+            lines[7].SetPosition(2, Position((Landmark)20));
+            lines[7].SetPosition(3, Position((Landmark)16));
+            lines[8].positionCount = 4;
+            lines[8].SetPosition(0, Position((Landmark)15));
+            lines[8].SetPosition(1, Position((Landmark)17));
+            lines[8].SetPosition(2, Position((Landmark)19));
+            lines[8].SetPosition(3, Position((Landmark)15));
 
-                    lines[9].positionCount = 2;
-                    lines[9].SetPosition(0, Position((Landmark)10));
-                    lines[9].SetPosition(1, Position((Landmark)9));
-
-
-                    lines[10].positionCount = 5;
-                    lines[10].SetPosition(0, Position((Landmark)8));
-                    lines[10].SetPosition(1, Position((Landmark)5));
-                    lines[10].SetPosition(2, Position((Landmark)0));
-                    lines[10].SetPosition(3, Position((Landmark)2));
-                    lines[10].SetPosition(4, Position((Landmark)7));
+            lines[9].positionCount = 2;
+            lines[9].SetPosition(0, Position((Landmark)10));
+            lines[9].SetPosition(1, Position((Landmark)9));
 
 
-                    //
-                    //    lines[0].positionCount = 4;
-                    // lines[0].SetPosition(0, Position((Landmark)32));
-                    // lines[0].SetPosition(1, Position((Landmark)30));
-                    // lines[0].SetPosition(2, Position((Landmark)28));
-                    // lines[0].SetPosition(3, Position((Landmark)32));
-                    // lines[1].positionCount = 4;
-                    // lines[1].SetPosition(0, Position((Landmark)31));
-                    // lines[1].SetPosition(1, Position((Landmark)29));
-                    // lines[1].SetPosition(2, Position((Landmark)27));
-                    // lines[1].SetPosition(3, Position((Landmark)31));
-
-                    // lines[2].positionCount = 3;
-                    // lines[2].SetPosition(0, Position((Landmark)28));
-                    // lines[2].SetPosition(1, Position((Landmark)26));
-                    // lines[2].SetPosition(2, Position((Landmark)24));
-                    // lines[3].positionCount = 3;
-                    // lines[3].SetPosition(0, Position((Landmark)27));
-                    // lines[3].SetPosition(1, Position((Landmark)25));
-                    // lines[3].SetPosition(2, Position((Landmark)23));
-
-                    // lines[4].positionCount = 5;
-                    // lines[4].SetPosition(0, Position((Landmark)24));
-                    // lines[4].SetPosition(1, Position((Landmark)23));
-                    // lines[4].SetPosition(2, Position((Landmark)11));
-                    // lines[4].SetPosition(3, Position((Landmark)12));
-                    // lines[4].SetPosition(4, Position((Landmark)24));
-
-                    // lines[5].positionCount = 4;
-                    // lines[5].SetPosition(0, Position((Landmark)12));
-                    // lines[5].SetPosition(1, Position((Landmark)14));
-                    // lines[5].SetPosition(2, Position((Landmark)16));
-                    // lines[5].SetPosition(3, Position((Landmark)22));
-                    // lines[6].positionCount = 4;
-                    // lines[6].SetPosition(0, Position((Landmark)11));
-                    // lines[6].SetPosition(1, Position((Landmark)13));
-                    // lines[6].SetPosition(2, Position((Landmark)15));
-                    // lines[6].SetPosition(3, Position((Landmark)21));
-                }
+            lines[10].positionCount = 5;
+            lines[10].SetPosition(0, Position((Landmark)8));
+            lines[10].SetPosition(1, Position((Landmark)5));
+            lines[10].SetPosition(2, Position((Landmark)0));
+            lines[10].SetPosition(3, Position((Landmark)2));
+            lines[10].SetPosition(4, Position((Landmark)7));
+        }
 
         public Vector3 Direction(Landmark from, Landmark to)
         {
@@ -501,9 +264,5 @@ private void Run()
         {
             return instances[(int)Mark].transform.position;
         }
-
-            }
-
-  
-        
+    }
 }

@@ -73,39 +73,39 @@ public class Avatar : MonoBehaviour
         spineUpDown = new CalibrationData(animator.transform, animator.GetBoneTransform(HumanBodyBones.Spine), animator.GetBoneTransform(HumanBodyBones.Neck),
             server.GetVirtualHip(), server.GetVirtualNeck());
         hipsTwist = new CalibrationData(animator.transform, animator.GetBoneTransform(HumanBodyBones.Hips), animator.GetBoneTransform(HumanBodyBones.Hips),
-            server.GetLandmark((int)Landmark.RIGHT_HIP), server.GetLandmark((int)Landmark.LEFT_HIP));
+            server.GetLandmark( Landmark.RIGHT_HIP), server.GetLandmark( Landmark.LEFT_HIP));
         chest = new CalibrationData(animator.transform, animator.GetBoneTransform(HumanBodyBones.Chest), animator.GetBoneTransform(HumanBodyBones.Chest),
-            server.GetLandmark((int)Landmark.RIGHT_HIP), server.GetLandmark((int)Landmark.LEFT_HIP));
+            server.GetLandmark( Landmark.RIGHT_HIP), server.GetLandmark( Landmark.LEFT_HIP));
         head = new CalibrationData(animator.transform, animator.GetBoneTransform(HumanBodyBones.Neck), animator.GetBoneTransform(HumanBodyBones.Head),
-            server.GetVirtualNeck(), server.GetLandmark((int)Landmark.NOSE));
+            server.GetVirtualNeck(), server.GetLandmark( Landmark.NOSE));
 
         // Adding calibration data automatically for the rest of the bones.
         AddCalibration(HumanBodyBones.RightUpperArm, HumanBodyBones.RightLowerArm,
-            server.GetLandmark((int)Landmark.RIGHT_SHOULDER), server.GetLandmark((int)Landmark.RIGHT_ELBOW));
+            server.GetLandmark( Landmark.RIGHT_SHOULDER), server.GetLandmark( Landmark.RIGHT_ELBOW));
         AddCalibration(HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand,
-            server.GetLandmark((int)Landmark.RIGHT_ELBOW), server.GetLandmark((int)Landmark.RIGHT_WRIST));
+            server.GetLandmark( Landmark.RIGHT_ELBOW), server.GetLandmark( Landmark.RIGHT_WRIST));
 
         AddCalibration(HumanBodyBones.RightUpperLeg, HumanBodyBones.RightLowerLeg,
-            server.GetLandmark((int)Landmark.RIGHT_HIP), server.GetLandmark((int)Landmark.RIGHT_KNEE));
+            server.GetLandmark( Landmark.RIGHT_HIP), server.GetLandmark( Landmark.RIGHT_KNEE));
         AddCalibration(HumanBodyBones.RightLowerLeg, HumanBodyBones.RightFoot,
-            server.GetLandmark((int)Landmark.RIGHT_KNEE), server.GetLandmark((int)Landmark.RIGHT_ANKLE));
+            server.GetLandmark( Landmark.RIGHT_KNEE), server.GetLandmark( Landmark.RIGHT_ANKLE));
 
         AddCalibration(HumanBodyBones.LeftUpperArm, HumanBodyBones.LeftLowerArm,
-            server.GetLandmark((int)Landmark.LEFT_SHOULDER), server.GetLandmark((int)Landmark.LEFT_ELBOW));
+            server.GetLandmark( Landmark.LEFT_SHOULDER), server.GetLandmark( Landmark.LEFT_ELBOW));
         AddCalibration(HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand,
-            server.GetLandmark((int)Landmark.LEFT_ELBOW), server.GetLandmark((int)Landmark.LEFT_WRIST));
+            server.GetLandmark( Landmark.LEFT_ELBOW), server.GetLandmark( Landmark.LEFT_WRIST));
 
         AddCalibration(HumanBodyBones.LeftUpperLeg, HumanBodyBones.LeftLowerLeg,
-            server.GetLandmark((int)Landmark.LEFT_HIP), server.GetLandmark((int)Landmark.LEFT_KNEE));
+            server.GetLandmark( Landmark.LEFT_HIP), server.GetLandmark( Landmark.LEFT_KNEE));
         AddCalibration(HumanBodyBones.LeftLowerLeg, HumanBodyBones.LeftFoot,
-            server.GetLandmark((int)Landmark.LEFT_KNEE), server.GetLandmark((int)Landmark.LEFT_ANKLE));
+            server.GetLandmark( Landmark.LEFT_KNEE), server.GetLandmark( Landmark.LEFT_ANKLE));
 
         if (footTracking)
         {
             AddCalibration(HumanBodyBones.LeftFoot, HumanBodyBones.LeftToes,
-                server.GetLandmark((int)Landmark.LEFT_ANKLE), server.GetLandmark((int)Landmark.LEFT_FOOT_INDEX));
+                server.GetLandmark( Landmark.LEFT_ANKLE), server.GetLandmark(Landmark.LEFT_FOOT_INDEX));
             AddCalibration(HumanBodyBones.RightFoot, HumanBodyBones.RightToes,
-                server.GetLandmark((int)Landmark.RIGHT_ANKLE), server.GetLandmark((int)Landmark.RIGHT_FOOT_INDEX));
+                server.GetLandmark( Landmark.RIGHT_ANKLE), server.GetLandmark(Landmark.RIGHT_FOOT_INDEX));
         }
 
         animator.enabled = false; // disable animator to stop interference.
