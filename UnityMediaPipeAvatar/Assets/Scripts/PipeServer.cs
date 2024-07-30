@@ -1,8 +1,10 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NativeWebSocket;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public class PipeServer : MonoBehaviour
 {
@@ -18,8 +20,9 @@ public class PipeServer : MonoBehaviour
     public float debug_samplespersecond;
     public int samplesForPose = 1;
     public bool active;
-    
 
+
+    public GameObject[] points;
     private WebSocket webSocket;
     private Body body;
 
@@ -45,7 +48,7 @@ public class PipeServer : MonoBehaviour
     {
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
-        body = new Body(bodyParent, landmarkPrefab, linePrefab, landmarkScale, enableHead ? headPrefab : null);
+        //body = new Body(bodyParent, landmarkPrefab, linePrefab, landmarkScale, enableHead ? headPrefab : null);
         virtualNeck = new GameObject("VirtualNeck").transform;
         virtualHip = new GameObject("VirtualHip").transform;
 
@@ -81,11 +84,10 @@ public class PipeServer : MonoBehaviour
         #if !UNITY_WEBGL || UNITY_EDITOR
         webSocket.DispatchMessageQueue();
         #endif
-
-        UpdateBody(body);
+        //UpdateBody(body);
     }
 
-    private void UpdateBody(Body b)
+   /* private void UpdateBody(Body b)
     {
         for (int i = 0; i < LANDMARK_COUNT; ++i)
         {
@@ -107,7 +109,7 @@ public class PipeServer : MonoBehaviour
         virtualHip.transform.position = (b.instances[(int)Landmark.RIGHT_HIP].transform.position + b.instances[(int)Landmark.LEFT_HIP].transform.position) / 2f;
 
         b.UpdateLines();
-    }
+    }*/
 
     // void ProcessBodyTrackingData(BodyTrackingData bodyData)
     // {
@@ -138,31 +140,84 @@ public class PipeServer : MonoBehaviour
     {
         bodyParent.gameObject.SetActive(visible);
     }
+    // private void HandleMessage(string message)
+    // {
+    //     string[] lines = message.Split('|');
+    //     foreach (string l in lines)
+    //     {
+    //         if (string.IsNullOrWhiteSpace(l))
+    //             continue;
+    //         string[] s = l.Split(',');
+    //         if (s.Length < 4) continue;
+    //         int i;
+    //         //if (!int.TryParse(s[0], out i)) continue;
+    //         //body.positionsBuffer[i].value += new Vector3(float.Parse(s[1]), float.Parse(s[2]), float.Parse(s[3]));
+    //         //position.tranform each landmark
+    //         //body.positionsBuffer[i].accumulatedValuesCount += 1;
+    //         //body.active = true;
+
+            
+    //         // Debug log each value
+    //             Debug.Log($"X: {float.Parse(s[1])}, Y: {float.Parse(s[2])}, Z: {float.Parse(s[3])}");
+    //         for(i = 0 ; i < 23; i++)
+    //         {
+    //             float x = float.Parse(s[1]);
+    //             float y = float.Parse(s[2]);
+    //             float z = float.Parse(s[3]);
+
+    //             points[i].transform.localPosition = new Vector3(x,y,z);
+    //         }
+
+
+    //             /*body.positionsBuffer[index].value += new Vector3(x, y, z) * multiplier;
+    //             body.positionsBuffer[index].accumulatedValuesCount += 1;
+    //             body.active = true;*/
+    //     }
+    // }
+
 
     private void HandleMessage(string message)
+{
+    string[] lines = message.Split('|');
+    foreach (string l in lines)
     {
-        string[] lines = message.Split('|');
-        foreach (string l in lines)
-        {
-            if (string.IsNullOrWhiteSpace(l))
-                continue;
-            string[] s = l.Split(',');
-            if (s.Length < 4) continue;
-            int i;
-            if (!int.TryParse(s[0], out i)) continue;
-            body.positionsBuffer[i].value += new Vector3(float.Parse(s[1]), float.Parse(s[2]), float.Parse(s[3]));
-            body.positionsBuffer[i].accumulatedValuesCount += 1;
-            body.active = true;
-            
-            // Debug log each value
-                Debug.Log($"X: {float.Parse(s[1])}, Y: {float.Parse(s[2])}, Z: {float.Parse(s[3])}");
+        if (string.IsNullOrWhiteSpace(l))
+            continue;
 
-                /*body.positionsBuffer[index].value += new Vector3(x, y, z) * multiplier;
-                body.positionsBuffer[index].accumulatedValuesCount += 1;
-                body.active = true;*/
-            
+        string[] s = l.Split(',');
+        if (s.Length < 4) continue;
+
+        int i;
+        if (!int.TryParse(s[0], out i)) continue;
+
+        if (i < 0 || i >= 23) 
+        {
+            Debug.LogWarning($"Index {i} is out of bounds.");
+            continue;
+        }
+
+        try
+        {
+            float x = float.Parse(s[1]);
+            float y = float.Parse(s[2]);
+            float z = float.Parse(s[3]);
+
+            Debug.Log($"Index: {i}, X: {x}, Y: {y}, Z: {z}");
+
+            points[i].transform.localPosition = new Vector3(x, y, z);
+        }
+        catch (FormatException ex)
+        {
+            Debug.LogError($"Error parsing coordinates: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Unexpected error: {ex.Message}");
         }
     }
+}
+
+
 
     private async void OnApplicationQuit()
     {
@@ -281,7 +336,6 @@ public class PipeServer : MonoBehaviour
             lines[10].SetPosition(3, Position((Landmark)2));
             lines[10].SetPosition(4, Position((Landmark)7));
         }
-
         public Vector3 Direction(Landmark from, Landmark to)
         {
             return (instances[(int)to].transform.position - instances[(int)from].transform.position).normalized;
