@@ -46,6 +46,7 @@ public class PipeServer : MonoBehaviour
 
     private async void Start()
     {
+        InitializePositions();
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
         //body = new Body(bodyParent, landmarkPrefab, linePrefab, landmarkScale, enableHead ? headPrefab : null);
@@ -156,7 +157,7 @@ public class PipeServer : MonoBehaviour
     //         //body.positionsBuffer[i].accumulatedValuesCount += 1;
     //         //body.active = true;
 
-            
+
     //         // Debug log each value
     //             Debug.Log($"X: {float.Parse(s[1])}, Y: {float.Parse(s[2])}, Z: {float.Parse(s[3])}");
     //         for(i = 0 ; i < 23; i++)
@@ -175,44 +176,121 @@ public class PipeServer : MonoBehaviour
     //     }
     // }
 
+    private void InitializePositions()
+    {
+        // Example initial positions (these should be adjusted to your specific needs)
+        Vector3 basePosition = new Vector3(0, -5.23f, 3.48f);
+        Vector3[] initialPositions = new Vector3[23] {
+ new Vector3(0, 2.0f, 0) + basePosition,  // Head
+            new Vector3(0, 1.7f, 0) + basePosition,  // Neck
+            new Vector3(-0.4f, 1.7f, 0) + basePosition,  // Left Shoulder
+            new Vector3(0.4f, 1.7f, 0) + basePosition,   // Right Shoulder
+            new Vector3(-0.6f, 1.3f, 0) + basePosition,  // Left Elbow
+            new Vector3(0.6f, 1.3f, 0) + basePosition,   // Right Elbow
+            new Vector3(-0.8f, 0.9f, 0) + basePosition,  // Left Wrist
+            new Vector3(0.8f, 0.9f, 0) + basePosition,   // Right Wrist
+            new Vector3(0, 1.2f, 0) + basePosition,  // Torso
+            new Vector3(-0.3f, 1.0f, 0) + basePosition,  // Left Hip
+            new Vector3(0.3f, 1.0f, 0) + basePosition,   // Right Hip
+            new Vector3(-0.3f, 0.6f, 0) + basePosition,  // Left Knee
+            new Vector3(0.3f, 0.6f, 0) + basePosition,   // Right Knee
+            new Vector3(-0.3f, 0.2f, 0) + basePosition,  // Left Ankle
+            new Vector3(0.3f, 0.2f, 0) + basePosition,   // Right Ankle
+            new Vector3(-0.4f, 1.5f, 0) + basePosition,  // Left Upper Arm
+            new Vector3(0.4f, 1.5f, 0) + basePosition,   // Right Upper Arm
+            new Vector3(-0.3f, 0.9f, 0) + basePosition,  // Left Thigh
+            new Vector3(0.3f, 0.9f, 0) + basePosition,   // Right Thigh
+            new Vector3(0, 1.4f, 0) + basePosition,  // Chest
+            new Vector3(-0.5f, 1.2f, 0) + basePosition,  // Left Side Torso
+            new Vector3(0.5f, 1.2f, 0) + basePosition,   // Right Side Torso
+            new Vector3(0, 0.4f, 0) + basePosition   // Base Spine
+        };
 
+        for (int i = 0; i < points.Length; i++)
+        {
+            points[i].transform.localPosition = initialPositions[i];
+        }
+    }
     private void HandleMessage(string message)
 {
+    // string[] lines = message.Split('|');
+    // foreach (string l in lines)
+    // {
+    //     if (string.IsNullOrWhiteSpace(l))
+    //         continue;
+
+    //     string[] s = l.Split(',');
+    //     if (s.Length < 4) continue;
+
+    //     int i;
+    //     if (!int.TryParse(s[0], out i)) continue;
+
+    //     if (i < 0 || i >= 23) 
+    //     {
+    //         Debug.LogWarning($"Index {i} is out of bounds.");
+    //         continue;
+    //     }
+
+    //     try
+    //     {
+    //         float x = float.Parse(s[1]);
+    //         float y = float.Parse(s[2]);
+    //         float z = float.Parse(s[3]);
+
+    //         Debug.Log($"Index: {i}, X: {x}, Y: {y}, Z: {z}");
+
+    //         points[i].transform.localPosition = new Vector3(x, y, z);
+    //     }
+    //     catch (FormatException ex)
+    //     {
+    //         Debug.LogError($"Error parsing coordinates: {ex.Message}");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Debug.LogError($"Unexpected error: {ex.Message}");
+    //     }
+    // }
+
     string[] lines = message.Split('|');
-    foreach (string l in lines)
+    
+    // Check if the number of landmarks is 23 (for safety, you may want to verify)
+    // if (lines.Length > 23)
+    // {
+    //     Debug.LogWarning($"Unexpected number of landmarks: {lines.Length}");
+    //     return;
+    // }
+
+    for (int i = 0; i < lines.Length; i++)
     {
-        if (string.IsNullOrWhiteSpace(l))
+        if (string.IsNullOrWhiteSpace(lines[i]))
             continue;
 
-        string[] s = l.Split(',');
+        string[] s = lines[i].Split(',');
         if (s.Length < 4) continue;
-
-        int i;
-        if (!int.TryParse(s[0], out i)) continue;
-
-        if (i < 0 || i >= 23) 
-        {
-            Debug.LogWarning($"Index {i} is out of bounds.");
-            continue;
-        }
 
         try
         {
+            int index = int.Parse(s[0]);
             float x = float.Parse(s[1]);
             float y = float.Parse(s[2]);
             float z = float.Parse(s[3]);
 
-            Debug.Log($"Index: {i}, X: {x}, Y: {y}, Z: {z}");
+            // Ensure index is within bounds
+            if (index < 0 || index >= points.Length)
+            {
+                Debug.LogWarning($"Index {index} is out of bounds.");
+                continue;
+            }
 
-            points[i].transform.localPosition = new Vector3(x, y, z);
-        }
-        catch (FormatException ex)
-        {
-            Debug.LogError($"Error parsing coordinates: {ex.Message}");
+            // Transform the position of each landmark
+            points[index].transform.localPosition = new Vector3(x, y, z);
+
+            // Debug log each value
+            Debug.Log($"Index: {index}, X: {x}, Y: {y}, Z: {z}");
         }
         catch (Exception ex)
         {
-            Debug.LogError($"Unexpected error: {ex.Message}");
+            Debug.LogError($"Error parsing or assigning values: {ex.Message}");
         }
     }
 }
