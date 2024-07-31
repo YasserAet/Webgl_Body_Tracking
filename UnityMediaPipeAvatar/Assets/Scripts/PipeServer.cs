@@ -43,10 +43,41 @@ public class PipeServer : MonoBehaviour
     {
         return virtualHip;
     }
+    private List<LineRenderer> lines = new List<LineRenderer>();
+
+    // Define connections between landmarks (pairs of indices)
+    private int[,] connections = new int[,]
+    {
+        { 0, 1 },  
+        { 0, 4 },  
+        { 4, 5 },  
+        { 5, 6 },  
+        { 1, 2 },  
+        { 2, 3 },  
+        { 3, 7 },  
+        { 6, 8 },  
+        { 10, 9 },
+        { 11, 12 },
+        { 12, 14 },
+        { 14, 16 },
+        { 16, 22 },
+        { 16, 18 },
+        { 18, 20 },
+        { 20, 16 },
+        { 11, 13 },
+        { 13, 15 },
+        { 15, 21 },
+        { 15, 17 },
+        { 17, 19 },
+        { 19, 15 },
+        { 12, 24 },
+        { 11, 23 }
+    };
 
     private async void Start()
     {
         InitializePositions();
+        InitializeLines();
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
         //body = new Body(bodyParent, landmarkPrefab, linePrefab, landmarkScale, enableHead ? headPrefab : null);
@@ -84,9 +115,9 @@ public class PipeServer : MonoBehaviour
     {
         #if !UNITY_WEBGL || UNITY_EDITOR
         webSocket.DispatchMessageQueue();
-        #endif
+#endif
         //UpdateBody(body);
-        
+        UpdateLines();
     }
     public void SetVisible(bool visible)
     {
@@ -128,6 +159,40 @@ public class PipeServer : MonoBehaviour
         for (int i = 0; i < points.Length; i++)
         {
             points[i].transform.localPosition = initialPositions[i];
+        }
+    }
+    private void InitializeLines()
+    {
+        for (int i = 0; i < connections.GetLength(0); i++)
+        {
+            // Instantiate a LineRenderer object from the prefab
+            GameObject lineObj = Instantiate(linePrefab, bodyParent);
+            LineRenderer line = lineObj.GetComponent<LineRenderer>();
+
+            if (line == null)
+            {
+                Debug.LogError("LineRenderer component is missing in the linePrefab.");
+                continue;
+            }
+
+            // Set the number of positions to 2 (start and end)
+            line.positionCount = 2;
+            lines.Add(line);
+        }
+    }
+    private void UpdateLines()
+    {
+        for (int i = 0; i < connections.GetLength(0); i++)
+        {
+            int startIdx = connections[i, 0];
+            int endIdx = connections[i, 1];
+
+            if (startIdx < points.Length && endIdx < points.Length)
+            {
+                // Update the positions of the LineRenderer
+                lines[i].SetPosition(0, points[startIdx].transform.position);
+                lines[i].SetPosition(1, points[endIdx].transform.position);
+            }
         }
     }
     private void HandleMessage(string message)
