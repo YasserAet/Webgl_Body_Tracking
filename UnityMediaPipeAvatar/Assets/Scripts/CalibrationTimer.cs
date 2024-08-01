@@ -1,85 +1,37 @@
-using System.Collections;
-using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
-public class CalibrationTimer : MonoBehaviour
+public class AvatarSync : MonoBehaviour
 {
-    public PipeServer server;
-    public int timer = 5;
-    public KeyCode calibrationKey = KeyCode.C;
-    public TextMeshProUGUI text;
+    public Transform[] avatarBones; // Array to hold references to avatar bones
+    public PipeServer pipeServer; // Reference to the PipeServer script
 
-    private bool calibrated;
+    void Update()
+    {
+        // Debug information
+        if (pipeServer == null || avatarBones.Length == 0)
+        {
+            Debug.LogError("PipeServer or avatarBones not set up.");
+            return;
+        }
 
-    private void Start()
-    {
-        bool shouldEnable = false;
-        Avatar[] a = FindObjectsByType<Avatar>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-        foreach (Avatar aa in a)
+        // Ensure the number of points matches the number of bones
+        if (pipeServer.points.Length != avatarBones.Length)
         {
-            if (!aa.isActiveAndEnabled) continue;
-            if (!aa.calibrationData)
-            {
-                shouldEnable = true;
-                break;
-            }
+            Debug.LogError("Mismatch between number of tracked points and avatar bones.");
+            return;
         }
-        text.text = shouldEnable ? "Press " + calibrationKey + " to start calibration timer." : "";
 
-        gameObject.SetActive(shouldEnable);
-        if (!shouldEnable)
+        // Update each bone based on the corresponding sphere
+        for (int i = 0; i < pipeServer.points.Length; i++)
         {
-            server.SetVisible(false);
-        }
-    }
+            // Get the position of the tracked point
+            Vector3 trackedPointPosition = pipeServer.points[i].transform.position;
 
-    private void Update()
-    {
-        if (Input.GetKeyDown(calibrationKey))
-        {
-            if (!calibrated)
-            {
-                calibrated = true;
-                StartCoroutine(Timer());
-            }
-            else
-            {
-                StartCoroutine(Notify());
-            }
+            // Debug the position being applied
+            Debug.Log($"Updating bone {i} to position: {trackedPointPosition}");
+
+            // Update the bone position
+            avatarBones[i].position = trackedPointPosition;
         }
-    }
-    private IEnumerator Timer()
-    {
-        int t = timer;
-        while (t > 0)
-        {
-            text.text = "Copy the avatars starting pose: " + t.ToString();
-            yield return new WaitForSeconds(1f);
-            --t;
-        }
-        Avatar[] a = FindObjectsByType<Avatar>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-        foreach (Avatar aa in a)
-        {
-            if (!aa.isActiveAndEnabled) continue;
-            aa.Calibrate();
-        }
-        if (a.Length > 0)
-        {
-            text.text = "Calibration Completed";
-            server.SetVisible(false);
-        }
-        else
-        {
-            text.text = "Avatar in scene not found...";
-        }
-        yield return new WaitForSeconds(1.5f);
-        text.text = "";
-    }
-    private IEnumerator Notify()
-    {
-        text.text = "Must restart instance to recalibrate."; // currently a limitation of the way things are set up
-        yield return new WaitForSeconds(3f);
-        text.text = "";
     }
 }

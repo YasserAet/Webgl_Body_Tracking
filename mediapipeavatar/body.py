@@ -352,7 +352,7 @@
 
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from clientUDP import ClientUDP
+# from clientUDP import ClientUDP
 import websocket
 import threading
 import time

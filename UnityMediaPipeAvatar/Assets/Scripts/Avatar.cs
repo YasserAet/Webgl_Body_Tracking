@@ -66,7 +66,7 @@ public class Avatar : MonoBehaviour
     {
         // Here we store the values of variables required to do the correct rotations at runtime.
         print("Calibrating on " + gameObject.name);
-
+        
         parentCalibrationData.Clear();
 
         // Manually setting calibration data for the spine chain as we want really specific control over that.
